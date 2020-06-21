@@ -3,9 +3,7 @@
 (require mock)
 (require rackunit)
 (require mock/rackunit)
-(require racket/trace)
-
-(define radices '(2 9 5 3 4 6))
+(require racket/generator)
 
 (define (generate rs proc)
   (__generate rs (build-list (length rs) (λ (i) 0)) proc))
@@ -20,10 +18,22 @@
         (to-next rs (list-set gd j 0) (add1 j) proc)
         (__generate rs (list-set gd j (add1 (list-ref gd j))) proc))))
 
+(define g
+  (generator
+   (radices)
+   (let loop ([rs radices] [gd  (build-list (length radices) (λ (i) 0))])
+     (yield gd)
+     (let to-next ([rs rs] [gd gd] [j 0])
+       (when (not (equal? j (length rs)))
+         (if (equal? (list-ref gd j) (sub1 (list-ref rs j)))
+             (to-next rs (list-set gd j 0) (add1 j))
+             (loop rs (list-set gd j (add1 (list-ref gd j))))))))))
+       
 ;(time (generate '(2 9 5 3 4 6) println))
 ;cpu time: 3056 real time: 3054 gc time: 486
 ;(time (generate '(7 2 9 5 3 4 6) println))
 ;cpu time: 23187 real time: 23157 gc time: 3130
+; ^ cpu time: 22851 real time: 22822 gc time: 3113
 
 (let* ((void-mock (mock #:behavior void)))
   (to-next '(1) '(0) 1 void-mock)

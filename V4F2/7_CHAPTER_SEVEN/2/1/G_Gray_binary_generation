@@ -1,23 +1,34 @@
 #lang racket
 
+; install mock and mock-rackunit using "File > Package Manager ..." or raco pkg install
 (require mock)
 (require rackunit)
 (require mock/rackunit)
 (require racket/generator)
 
-(define (generate rs proc)
-  (__generate rs (build-list (length rs) (λ (i) 0)) proc))
+; apply proc to each list (a_1 ... a_n) where 0 <= a_i < m_i for i = 1, ..., n
+; with radices = (m_1 ... m_n)
+;> (generate '(1 2 3) println)
+;'(0 0 0)
+;'(0 1 0)
+;'(0 0 1)
+;'(0 1 1)
+;'(0 0 2)
+;'(0 1 2)
+(define (generate radices proc)
+  (__generate radices (build-list (length radices) (λ (i) 0)) proc))
 
-(define (__generate rs gd proc)
-    (proc gd)
-    (to-next rs gd 0 proc))
+(define (__generate radices generated proc)
+    (proc generated)
+    (to-next radices generated 0 proc))
 
-(define (to-next rs gd j proc)
-  (when (not (equal? j (length rs)))
-    (if (equal? (list-ref gd j) (sub1 (list-ref rs j)))
-        (to-next rs (list-set gd j 0) (add1 j) proc)
-        (__generate rs (list-set gd j (add1 (list-ref gd j))) proc))))
+(define (to-next radices generated j proc)
+  (when (not (equal? j (length radices)))
+    (if (equal? (list-ref generated j) (sub1 (list-ref radices j)))
+        (to-next radices (list-set generated j 0) (add1 j) proc)
+        (__generate radices (list-set generated j (add1 (list-ref generated j))) proc))))
 
+;attempt using generator
 (define g
   (generator
    (radices)
